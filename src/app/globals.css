@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+:root {
+  --background: #030712;
+  --foreground: #10b981;
+}
+
+body {
+  background: #020617;
+  color: #e2e8f0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  overflow-x: hidden;
+}
+
+/* Custom Scrollbar for Cyberpunk Terminal Feel */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #030712;
+}
+::-webkit-scrollbar-thumb {
+  background: #064e3b;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #10b981;
+}
