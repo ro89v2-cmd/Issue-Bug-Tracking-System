@@ -92,12 +92,20 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          <Link
-            href="/issues/new"
-            className="self-start md:self-center inline-flex items-center px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all hover:scale-105"
-          >
-            ⚡ LOG NEW INCIDENT
-          </Link>
+          <div className="flex flex-wrap items-center gap-3 self-start md:self-center">
+            <Link
+              href="/scanner"
+              className="inline-flex items-center px-5 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-xl text-xs uppercase tracking-widest shadow-lg shadow-rose-600/30 transition-all hover:scale-105 border border-rose-400/40"
+            >
+              📡 LIVE THREAT RADAR
+            </Link>
+            <Link
+              href="/issues/new"
+              className="inline-flex items-center px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all hover:scale-105"
+            >
+              ⚡ LOG NEW INCIDENT
+            </Link>
+          </div>
         </div>
 
         {/* 4 Pillars of OOP Badges in Cyberpunk Style */}
@@ -108,7 +116,7 @@ export default function DashboardPage() {
           </div>
           <div className="bg-slate-900/80 border border-emerald-500/20 p-3 rounded-xl">
             <span className="font-bold text-emerald-400 block mb-1">02. INHERITANCE</span>
-            <span className="text-slate-400 text-[11px]">Bug &amp; Feature models extend Core Base Issue</span>
+            <span className="text-slate-400 text-[11px]">Bug, Feature &amp; Threat models extend Core Base Issue</span>
           </div>
           <div className="bg-slate-900/80 border border-emerald-500/20 p-3 rounded-xl">
             <span className="font-bold text-emerald-400 block mb-1">03. POLYMORPHISM</span>
@@ -155,7 +163,7 @@ export default function DashboardPage() {
             {Object.entries(stats?.byType || {}).map(([type, count]) => (
               <div key={type} className="flex items-center justify-between p-3 rounded-xl bg-slate-900/60 border border-slate-800">
                 <span className="text-slate-300 font-mono text-xs">
-                  {type === 'Bug' ? '🐛 Bug (Defect Instance)' : type === 'Feature' ? '✨ Feature (Enhancement)' : '📋 Task (Core Unit)'}
+                  {type === 'Threat' ? '🚨 Threat (Vulnerability & CVE)' : type === 'Bug' ? '🐛 Bug (Defect Instance)' : type === 'Feature' ? '✨ Feature (Enhancement)' : '📋 Task (Core Unit)'}
                 </span>
                 <span className="font-bold font-mono text-emerald-400 bg-slate-950 px-3 py-1 rounded-md border border-emerald-500/30 text-xs">
                   {count}

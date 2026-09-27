@@ -21,8 +21,10 @@ interface IssueCardProps {
 export default function IssueCard({ issue, onDelete }: IssueCardProps) {
   const getTypeTag = (type: string) => {
     switch (type) {
+      case 'Threat':
+        return { icon: '🚨', label: 'THREAT / CVE', color: 'text-rose-400 border-rose-500/40 bg-rose-950/60 shadow-[0_0_10px_rgba(244,63,94,0.2)] animate-pulse' };
       case 'Bug':
-        return { icon: '🐛', label: 'VULN/BUG', color: 'text-red-400 border-red-500/30 bg-red-950/40' };
+        return { icon: '🐛', label: 'VULN / BUG', color: 'text-amber-400 border-amber-500/30 bg-amber-950/40' };
       case 'Feature':
         return { icon: '✨', label: 'ENHANCE', color: 'text-purple-400 border-purple-500/30 bg-purple-950/40' };
       default:

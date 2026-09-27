@@ -56,6 +56,10 @@ export async function POST(request: NextRequest) {
       useCase: body.useCase,
       acceptanceCriteria: body.acceptanceCriteria,
       estimatedEffort: body.estimatedEffort,
+      threatType: body.threatType,
+      cvssScore: body.cvssScore !== undefined ? Number(body.cvssScore) : undefined,
+      affectedTarget: body.affectedTarget,
+      remediation: body.remediation,
     });
 
     return NextResponse.json(

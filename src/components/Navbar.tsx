@@ -21,6 +21,7 @@ export default function Navbar() {
 
   const navLinks = [
     { href: '/dashboard', label: 'SOC Dashboard', icon: '📊' },
+    { href: '/scanner', label: 'Threat Radar', icon: '📡' },
     { href: '/issues', label: 'Incidents & Bugs', icon: '🐛' },
     { href: '/issues/new', label: 'Log Incident', icon: '➕' },
     { href: '/projects', label: 'Repositories', icon: '📁' },

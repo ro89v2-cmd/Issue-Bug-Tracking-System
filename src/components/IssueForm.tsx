@@ -29,6 +29,10 @@ export default function IssueForm({ initialData, isEditing = false }: IssueFormP
     useCase: initialData?.useCase || '',
     acceptanceCriteria: initialData?.acceptanceCriteria || '',
     estimatedEffort: initialData?.estimatedEffort || 'Medium',
+    threatType: initialData?.threatType || 'Security Vulnerability',
+    cvssScore: initialData?.cvssScore || '7.5',
+    affectedTarget: initialData?.affectedTarget || '',
+    remediation: initialData?.remediation || '',
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -116,6 +120,7 @@ export default function IssueForm({ initialData, isEditing = false }: IssueFormP
               onChange={handleChange}
               className="w-full px-3.5 py-2.5 bg-slate-900 border border-emerald-500/30 rounded-xl text-emerald-300 focus:outline-none focus:border-emerald-400"
             >
+              <option value="Threat">🚨 Threat Class (Extends Issue + CVE &amp; CVSS Telemetry)</option>
               <option value="Bug">🐛 Bug Class (Extends Issue + Attack/Bug Vector)</option>
               <option value="Feature">✨ Feature Class (Extends Issue + Specs)</option>
               <option value="Task">📋 Task Class (Base Issue Instance)</option>
@@ -278,6 +283,64 @@ export default function IssueForm({ initialData, isEditing = false }: IssueFormP
               <option value="High">High (1-2 Weeks)</option>
               <option value="Very High">Very High (&gt; 2 Weeks)</option>
             </select>
+          </div>
+        </div>
+      )}
+
+      {/* Subclass Threat Specifics */}
+      {formData.type === 'Threat' && (
+        <div className="bg-rose-950/20 border border-rose-500/30 rounded-2xl p-6 space-y-4 backdrop-blur-sm">
+          <h3 className="text-sm font-bold text-rose-400 border-b border-rose-500/20 pb-2 uppercase tracking-wider flex items-center gap-2">
+            <span>🚨</span> THREAT &amp; CVE ATTRIBUTES (SUBCLASS ATTRIBUTES)
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block uppercase tracking-wider text-rose-300/80 mb-1.5">&gt; THREAT / CVE CLASSIFICATION</label>
+              <input
+                type="text"
+                name="threatType"
+                value={formData.threatType}
+                onChange={handleChange}
+                className="w-full px-3.5 py-2.5 bg-slate-950 border border-rose-500/30 rounded-xl text-rose-300 placeholder-rose-950 focus:outline-none focus:border-rose-400"
+                placeholder="e.g. CWE-798: Hard-coded Credentials"
+              />
+            </div>
+            <div>
+              <label className="block uppercase tracking-wider text-rose-300/80 mb-1.5">&gt; CVSS BASE SCORE (0.0 - 10.0)</label>
+              <input
+                type="number"
+                step="0.1"
+                min="0"
+                max="10"
+                name="cvssScore"
+                value={formData.cvssScore}
+                onChange={handleChange}
+                className="w-full px-3.5 py-2.5 bg-slate-950 border border-rose-500/30 rounded-xl text-rose-300 placeholder-rose-950 focus:outline-none focus:border-rose-400"
+                placeholder="7.5"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block uppercase tracking-wider text-rose-300/80 mb-1.5">&gt; AFFECTED TARGET / ENDPOINT</label>
+            <input
+              type="text"
+              name="affectedTarget"
+              value={formData.affectedTarget}
+              onChange={handleChange}
+              className="w-full px-3.5 py-2.5 bg-slate-950 border border-rose-500/30 rounded-xl text-rose-300 placeholder-rose-950 focus:outline-none focus:border-rose-400"
+              placeholder="e.g. https://target.api/v1/auth or src/auth.ts"
+            />
+          </div>
+          <div>
+            <label className="block uppercase tracking-wider text-rose-300/80 mb-1.5">&gt; REMEDIATION / PATCH GUIDE</label>
+            <textarea
+              name="remediation"
+              value={formData.remediation}
+              onChange={handleChange}
+              rows={3}
+              className="w-full px-3.5 py-2.5 bg-slate-950 border border-rose-500/30 rounded-xl text-rose-300 placeholder-rose-950 focus:outline-none focus:border-rose-400"
+              placeholder="Rotate key immediately, migrate secrets to environment vault..."
+            />
           </div>
         </div>
       )}

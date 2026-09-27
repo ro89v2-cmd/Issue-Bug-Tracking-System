@@ -7,6 +7,7 @@ import { GoogleSheetService } from './GoogleSheetService';
 import { Issue } from '@/models/Issue';
 import { Bug } from '@/models/Bug';
 import { Feature } from '@/models/Feature';
+import { Threat } from '@/models/Threat';
 import { IssueFactory } from '@/models/IssueFactory';
 import { IssueType, Priority, Status } from '@/models/enums';
 
@@ -34,6 +35,10 @@ export class IssueService {
     useCase?: string;
     acceptanceCriteria?: string;
     estimatedEffort?: string;
+    threatType?: string;
+    cvssScore?: number;
+    affectedTarget?: string;
+    remediation?: string;
   }): Promise<Issue> {
     let issue: Issue;
 
@@ -62,6 +67,20 @@ export class IssueService {
           data.useCase || '',
           data.acceptanceCriteria || '',
           data.estimatedEffort || 'Medium',
+          data.assignee || ''
+        );
+        break;
+      case IssueType.THREAT:
+        issue = new Threat(
+          data.title,
+          data.description,
+          data.priority,
+          data.reporter,
+          data.projectId,
+          data.threatType || 'Security Vulnerability',
+          data.cvssScore !== undefined ? data.cvssScore : 5.0,
+          data.affectedTarget || '',
+          data.remediation || '',
           data.assignee || ''
         );
         break;

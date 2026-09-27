@@ -16,16 +16,22 @@
 - Subclasses:
   - [`Bug`](file:///C:/Users/mlapp/OneDrive/Desktop/Issue%20Bug%20Tracing%20System/issue-bug-tracking/src/models/Bug.ts) extends `Issue` เพิ่มฟิลด์: `stepsToReproduce`, `expectedBehavior`, `actualBehavior`, `environment`
   - [`Feature`](file:///C:/Users/mlapp/OneDrive/Desktop/Issue%20Bug%20Tracing%20System/issue-bug-tracking/src/models/Feature.ts) extends `Issue` เพิ่มฟิลด์: `useCase`, `acceptanceCriteria`, `estimatedEffort`
+  - [`Threat`](file:///C:/Users/mlapp/OneDrive/Desktop/Issue%20Bug%20Tracing%20System/issue-bug-tracking/src/models/Threat.ts) extends `Issue` เพิ่มฟิลด์: `threatType`, `cvssScore`, `affectedTarget`, `remediation`
+- Scanner Engine Hierarchy:
+  - Base Class: `BaseScanner`
+  - Derived Scanners: `WebSecurityScanner`, `CodeVulnerabilityScanner`
 
 ### 3. Polymorphism (การพ้องรูป)
 - Method Overriding:
   - `getDetails()`: Subclass แต่ละคลาสแสดงผลรายละเอียดแตกต่างกัน
-  - `getTypeLabel()`: คืนค่า emoji และป้ายประเภทตาม subclass
-  - `getSeverityScore()`: คำนวณคะแนนความรุนแรง โดย `Bug` จะมีตัวคูณความรุนแรงสูงกว่า `Feature`
+  - `getTypeLabel()`: คืนค่า emoji และป้ายประเภทตาม subclass (🐛 Bug, ✨ Feature, 🚨 Threat)
+  - `getSeverityScore()`: คำนวณคะแนนความรุนแรง โดย `Threat` และ `Bug` จะมีตัวคูณความรุนแรงตาม CVSS สูงกว่า `Feature`
+  - `scan()`: Subclass Scanner แต่ละตัวแยกวิธีสแกน (Network HTTP vs Code AST/Regex)
 
 ### 4. Design Patterns ที่ใช้
-- **Factory Pattern**: [`IssueFactory`](file:///C:/Users/mlapp/OneDrive/Desktop/Issue%20Bug%20Tracing%20System/issue-bug-tracking/src/models/IssueFactory.ts) สำหรับสร้าง Instance ของ `Bug`, `Feature` หรือ `Issue` ตามข้อมูลที่ได้รับจากฐานข้อมูล
-- **Singleton Pattern**: [`GoogleSheetService`](file:///C:/Users/mlapp/OneDrive/Desktop/Issue%20Bug%20Tracing%20System/issue-bug-tracking/src/services/GoogleSheetService.ts) ใช้ instance เดียวทั่วทั้งแอปพลิเคชันเพื่อจัดการการเชื่อมต่อ Google Sheets API (พร้อม In-Memory Fallback ให้รันได้ทันทีโดยไม่ต้องตั้งค่าล่วงหน้า)
+- **Factory Pattern**: [`IssueFactory`](file:///C:/Users/mlapp/OneDrive/Desktop/Issue%20Bug%20Tracing%20System/issue-bug-tracking/src/models/IssueFactory.ts) สำหรับสร้าง Instance ของ `Bug`, `Feature`, `Threat` หรือ `Issue` ตามประเภท
+- **Singleton Pattern**: [`GoogleSheetService`](file:///C:/Users/mlapp/OneDrive/Desktop/Issue%20Bug%20Tracing%20System/issue-bug-tracking/src/services/GoogleSheetService.ts) และ `ThreatScannerService`
+- **Facade Pattern**: `ThreatScannerService` ประสานงานระหว่าง Web Scanner, Code Scanner และ IssueService สำหรับ Auto-Incident Generation
 
 ---
 

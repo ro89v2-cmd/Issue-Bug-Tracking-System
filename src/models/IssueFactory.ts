@@ -5,6 +5,7 @@
 import { Issue } from './Issue';
 import { Bug } from './Bug';
 import { Feature } from './Feature';
+import { Threat } from './Threat';
 import { IssueType } from './enums';
 
 export class IssueFactory {
@@ -16,6 +17,8 @@ export class IssueFactory {
         return Bug.fromJSON(data);
       case IssueType.FEATURE:
         return Feature.fromJSON(data);
+      case IssueType.THREAT:
+        return Threat.fromJSON(data);
       default:
         return Issue.fromJSON(data);
     }

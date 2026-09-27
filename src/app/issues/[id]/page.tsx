@@ -26,6 +26,10 @@ interface IssueDetail {
   useCase?: string;
   acceptanceCriteria?: string;
   estimatedEffort?: string;
+  threatType?: string;
+  cvssScore?: string;
+  affectedTarget?: string;
+  remediation?: string;
 }
 
 export default function IssueDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -287,6 +291,43 @@ export default function IssueDetailPage({ params }: { params: Promise<{ id: stri
               <span className="text-purple-300/80 block uppercase tracking-wider mb-1">&gt; ESTIMATED DEV EFFORT:</span>
               <p className="text-purple-200 bg-slate-950/90 p-3 rounded-lg border border-purple-500/20 font-bold">
                 {issue.estimatedEffort || 'Medium'}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Threat Subclass Telemetry */}
+      {issue.type === 'Threat' && (
+        <div className="bg-rose-950/20 rounded-2xl border border-rose-500/30 p-6 space-y-4 backdrop-blur-sm shadow-[0_0_15px_rgba(244,63,94,0.1)]">
+          <h3 className="text-xs uppercase tracking-widest text-rose-400 font-bold flex items-center gap-2">
+            <span>🚨</span> SUBCLASS THREAT &amp; CVE ATTRIBUTES (OOP INHERITANCE)
+          </h3>
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <span className="text-rose-300/80 block uppercase tracking-wider mb-1">&gt; THREAT / CVE CLASSIFICATION:</span>
+                <p className="text-rose-200 bg-slate-950/90 p-3 rounded-lg border border-rose-500/20 font-bold">
+                  {issue.threatType || 'Security Vulnerability'}
+                </p>
+              </div>
+              <div>
+                <span className="text-rose-300/80 block uppercase tracking-wider mb-1">&gt; CVSS BASE SCORE:</span>
+                <p className="text-rose-200 bg-slate-950/90 p-3 rounded-lg border border-rose-500/20 font-bold text-rose-400">
+                  {issue.cvssScore ? `${issue.cvssScore} / 10.0` : 'N/A'}
+                </p>
+              </div>
+            </div>
+            <div>
+              <span className="text-rose-300/80 block uppercase tracking-wider mb-1">&gt; AFFECTED TARGET / COMPONENT:</span>
+              <p className="text-rose-200 bg-slate-950/90 p-3 rounded-lg border border-rose-500/20 font-mono text-xs">
+                {issue.affectedTarget || 'N/A'}
+              </p>
+            </div>
+            <div>
+              <span className="text-rose-300/80 block uppercase tracking-wider mb-1">&gt; RECOMMENDED REMEDIATION / PATCH:</span>
+              <p className="text-emerald-300 bg-slate-950/90 p-3 rounded-lg border border-emerald-500/20 whitespace-pre-wrap font-mono text-xs">
+                {issue.remediation || 'N/A'}
               </p>
             </div>
           </div>
