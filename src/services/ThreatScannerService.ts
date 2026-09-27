@@ -42,13 +42,21 @@ export class ThreatScannerService {
 
   // Auto-generate Incident from Scan Finding into the database
   async autoLogIncident(finding: ScanFinding, reporter: string = 'SOC Automated Scanner'): Promise<Issue> {
-    const isCodeBug = finding.cveOrType.includes('Defect') || finding.category === 'code_vuln';
+    const isCodeBug = finding.cveOrType.includes('Defect') || finding.cveOrType.includes('ข้อผิดพลาด') || finding.category === 'code_vuln';
+
+    const formattedDescription = [
+      finding.simpleExplanation ? `💡 คำอธิบายเข้าใจง่าย:\n${finding.simpleExplanation}` : '',
+      finding.riskImpact ? `⚠️ ผลกระทบความเสี่ยง:\n${finding.riskImpact}` : '',
+      `🎯 ตำแหน่งเป้าหมาย:\n${finding.target}`,
+      finding.evidence ? `🔍 หลักฐานที่ตรวจพบ:\n${finding.evidence}` : '',
+      finding.howToFixEasy ? `🛠️ วิธีแก้ไข (Step-by-Step):\n${finding.howToFixEasy}` : `🛠️ คำแนะนำทางเทคนิค:\n${finding.remediation}`,
+    ].filter(Boolean).join('\n\n');
 
     if (isCodeBug) {
       // Create as Bug
       return this._issueService.createIssue({
         title: `[DEFECT] ${finding.title}`,
-        description: `${finding.description}\n\nTarget / Location: ${finding.target}\nRemediation: ${finding.remediation}`,
+        description: formattedDescription,
         type: IssueType.BUG,
         priority: finding.severity,
         reporter,
@@ -62,7 +70,7 @@ export class ThreatScannerService {
       // Create as Threat
       return this._issueService.createIssue({
         title: `[THREAT] ${finding.title}`,
-        description: `${finding.description}\n\nCVE/Type: ${finding.cveOrType}\nAffected Target: ${finding.target}\nRemediation: ${finding.remediation}`,
+        description: formattedDescription,
         type: IssueType.THREAT,
         priority: finding.severity,
         reporter,
@@ -70,7 +78,7 @@ export class ThreatScannerService {
         threatType: finding.cveOrType,
         cvssScore: finding.cvssScore,
         affectedTarget: finding.target,
-        remediation: finding.remediation,
+        remediation: finding.howToFixEasy || finding.remediation,
       });
     }
   }

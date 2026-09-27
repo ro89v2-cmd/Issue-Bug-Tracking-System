@@ -7,6 +7,7 @@ import { ScanFinding, WebScanSummary, CodeScanSummary } from '@/services/scanner
 
 export default function ThreatScannerPage() {
   const [activeTab, setActiveTab] = useState<'web' | 'code'>('web');
+  const [isSimpleMode, setIsSimpleMode] = useState(true);
 
   // Web Scanner State
   const [targetUrl, setTargetUrl] = useState('http://localhost:3000');
@@ -14,10 +15,17 @@ export default function ThreatScannerPage() {
   const [webResult, setWebResult] = useState<WebScanSummary | null>(null);
 
   // Code Scanner State
-  const [sourceCode, setSourceCode] = useState(`// Example: Unsafe Application Logic
-const apiKey = "AKIAIOSFODNN7EXAMPLE"; // Leaked AWS Credential
-const query = "SELECT * FROM users WHERE username = '" + req.body.username + "'"; // SQL Injection
-eval("var payload = " + req.body.data); // Arbitrary Code Execution
+  const [sourceCode, setSourceCode] = useState(`// ตัวอย่างโค้ดที่มีความเสี่ยงหลายจุด:
+const AWS_SECRET_KEY = "AKIAIOSFODNN7EXAMPLE"; // คีย์ลับ AWS หลุด
+const OPENAI_KEY = "sk-proj-abc1234567890abcdef1234567890abcdef"; // คีย์ OpenAI หลุด
+
+function loginUser(req, res) {
+  // อันตราย: SQL Injection เอาข้อความมาบวกกันตรงๆ
+  const sql = "SELECT * FROM users WHERE username = '" + req.body.username + "'";
+  
+  // อันตราย: eval สั่งรันโค้ดคอมพิวเตอร์ตามอำเภอใจ
+  eval("console.log('User logged: ' + req.body.username)");
+}
 `);
   const [codeScanning, setCodeScanning] = useState(false);
   const [codeResult, setCodeResult] = useState<CodeScanSummary | null>(null);
@@ -29,7 +37,7 @@ eval("var payload = " + req.body.data); // Arbitrary Code Execution
   const handleWebScan = async (urlToScan?: string) => {
     const url = urlToScan || targetUrl;
     if (!url.trim()) {
-      toast.error('กรุณาระบุ URL ที่ต้องการสแกน');
+      toast.error('กรุณาระบุ URL เว็บไซต์ที่ต้องการสแกน');
       return;
     }
 
@@ -44,7 +52,7 @@ eval("var payload = " + req.body.data); // Arbitrary Code Execution
 
       if (data.success) {
         setWebResult(data.data);
-        toast.success(`สแกนเสร็จสิ้น! พบ ${data.data.totalFindings} จุดตรวจความปลอดภัย`);
+        toast.success(`สแกนเสร็จสมบูรณ์! ตรวจพบ ${data.data.totalFindings} จุดที่ควรระวัง`);
       } else {
         toast.error(data.error || 'การสแกนล้มเหลว');
       }
@@ -59,7 +67,7 @@ eval("var payload = " + req.body.data); // Arbitrary Code Execution
   // 2. Run Code Scan
   const handleCodeScan = async () => {
     if (!sourceCode.trim()) {
-      toast.error('กรุณาใส่โค้ดที่ต้องการตรวจสอบ');
+      toast.error('กรุณาวางโค้ดที่ต้องการตรวจสอบ');
       return;
     }
 
@@ -74,7 +82,7 @@ eval("var payload = " + req.body.data); // Arbitrary Code Execution
 
       if (data.success) {
         setCodeResult(data.data);
-        toast.success(`ตรวจสอบโค้ดเสร็จสิ้น! พบ ${data.data.totalFindings} ช่องโหว่`);
+        toast.success(`ตรวจสอบโค้ดเสร็จแล้ว! พบช่องโหว่/คีย์ลับ ${data.data.totalFindings} รายการ`);
       } else {
         toast.error(data.error || 'การตรวจสอบล้มเหลว');
       }
@@ -89,7 +97,7 @@ eval("var payload = " + req.body.data); // Arbitrary Code Execution
   // 3. Auto-Log finding into DB as Threat or Bug
   const handleAutoLog = async (finding: ScanFinding) => {
     try {
-      const toastId = toast.loading('กำลังบันทึก Incident เข้าสู่ Command Center...');
+      const toastId = toast.loading('กำลังนำบันทึกเข้า Command Center...');
       const res = await fetch('/api/scanner/auto-incident', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -106,10 +114,10 @@ eval("var payload = " + req.body.data); // Arbitrary Code Execution
           <span>
             บันทึกสำเร็จ!{' '}
             <Link href={`/issues/${data.data.id}`} className="underline font-bold text-emerald-400">
-              ดู Ticket #{data.data.id.slice(0, 8)}
+              คลิกดู Ticket #{data.data.id.slice(0, 8)}
             </Link>
           </span>,
-          { id: toastId, duration: 5000 }
+          { id: toastId, duration: 6000 }
         );
       } else {
         toast.error(data.error || 'ไม่สามารถบันทึกได้', { id: toastId });
@@ -122,13 +130,22 @@ eval("var payload = " + req.body.data); // Arbitrary Code Execution
   const getSeverityBadge = (severity: string) => {
     switch (severity) {
       case 'Critical':
-        return 'bg-rose-950/80 text-rose-300 border-rose-500/50 shadow-[0_0_8px_rgba(244,63,94,0.4)]';
+        return 'bg-rose-950/90 text-rose-300 border-rose-500/60 shadow-[0_0_10px_rgba(244,63,94,0.4)] font-black';
       case 'High':
-        return 'bg-amber-950/80 text-amber-300 border-amber-500/50 shadow-[0_0_8px_rgba(245,158,11,0.3)]';
+        return 'bg-amber-950/90 text-amber-300 border-amber-500/60 shadow-[0_0_10px_rgba(245,158,11,0.3)] font-black';
       case 'Medium':
-        return 'bg-yellow-950/80 text-yellow-300 border-yellow-500/40';
+        return 'bg-yellow-950/80 text-yellow-300 border-yellow-500/50 font-bold';
       default:
         return 'bg-slate-900 text-slate-300 border-slate-700';
+    }
+  };
+
+  const getSeverityLabelThai = (severity: string) => {
+    switch (severity) {
+      case 'Critical': return '🔴 อันตรายสูงสุด (วิกฤต)';
+      case 'High': return '🟠 ความเสี่ยงสูง (ควรแก้ด่วน)';
+      case 'Medium': return '🟡 ความเสี่ยงปานกลาง';
+      default: return '🟢 แนะนำเพื่อความปลอดภัย';
     }
   };
 
@@ -139,51 +156,171 @@ eval("var payload = " + req.body.data); // Arbitrary Code Execution
     return 'text-rose-500 border-rose-500 shadow-rose-500/40 animate-pulse';
   };
 
+  // Helper Card Component for Finding
+  const renderFindingCard = (finding: ScanFinding) => {
+    const isLogged = loggedFindingIds[finding.id];
+    return (
+      <div
+        key={finding.id}
+        className="bg-slate-950/90 border border-slate-800 hover:border-emerald-500/50 rounded-2xl p-6 transition-all space-y-4 shadow-xl backdrop-blur-md"
+      >
+        {/* Header Row */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800/80">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={`text-[11px] px-3 py-1 rounded-lg border uppercase tracking-wider ${getSeverityBadge(finding.severity)}`}>
+              {getSeverityLabelThai(finding.severity)}
+            </span>
+            <span className="text-slate-400 text-xs font-mono bg-slate-900 px-2.5 py-0.5 rounded border border-slate-800">
+              คะแนนความรุนแรง CVSS: {finding.cvssScore.toFixed(1)} / 10
+            </span>
+            <span className="text-slate-500 text-xs font-mono">
+              [{finding.cveOrType}]
+            </span>
+          </div>
+
+          {/* Auto-Log Incident Button */}
+          <button
+            onClick={() => handleAutoLog(finding)}
+            disabled={isLogged}
+            className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center space-x-2 self-start sm:self-auto cursor-pointer ${
+              isLogged
+                ? 'bg-slate-800 text-emerald-400 border border-emerald-500/30 cursor-default'
+                : 'bg-rose-600 hover:bg-rose-500 text-white shadow-lg shadow-rose-600/30 hover:scale-105'
+            }`}
+          >
+            <span>{isLogged ? '✓' : '⚡'}</span>
+            <span>{isLogged ? 'บันทึกเป็น Ticket แล้ว' : 'สร้าง Ticket สั่งแก้ไขทันที'}</span>
+          </button>
+        </div>
+
+        {/* Title */}
+        <div>
+          <h4 className="text-white font-bold text-base tracking-wide flex items-center gap-2">
+            <span className="text-rose-400">⚠️</span>
+            <span>{finding.title}</span>
+          </h4>
+        </div>
+
+        {/* 💡 1. คำอธิบายแบบเข้าใจง่าย (Simple Explanation) */}
+        <div className="bg-sky-950/30 border border-sky-500/30 rounded-xl p-4 space-y-1.5">
+          <div className="flex items-center space-x-2 text-sky-400 font-bold text-xs">
+            <span>💡</span>
+            <span>อธิบายเข้าใจง่าย (คืออะไร?):</span>
+          </div>
+          <p className="text-slate-200 text-xs leading-relaxed">
+            {finding.simpleExplanation || finding.description}
+          </p>
+        </div>
+
+        {/* ⚠️ 2. ผลกระทบหากไม่แก้ไข (Risk & Impact) */}
+        {finding.riskImpact && (
+          <div className="bg-amber-950/25 border border-amber-500/30 rounded-xl p-4 space-y-1.5">
+            <div className="flex items-center space-x-2 text-amber-400 font-bold text-xs">
+              <span>🚨</span>
+              <span>อันตรายอย่างไร หากไม่แก้ไข:</span>
+            </div>
+            <p className="text-amber-200/90 text-xs leading-relaxed">
+              {finding.riskImpact}
+            </p>
+          </div>
+        )}
+
+        {/* 🛠️ 3. วิธีแก้ไขแบบเข้าใจง่าย (How to Fix Easy) */}
+        <div className="bg-emerald-950/30 border border-emerald-500/30 rounded-xl p-4 space-y-1.5">
+          <div className="flex items-center space-x-2 text-emerald-400 font-bold text-xs">
+            <span>🛠️</span>
+            <span>วิธีแก้ไขที่แนะนำ (ทำตามได้เลย):</span>
+          </div>
+          <p className="text-emerald-200/90 text-xs leading-relaxed whitespace-pre-line font-mono">
+            {finding.howToFixEasy || finding.remediation}
+          </p>
+        </div>
+
+        {/* ⚙️ 4. ข้อมูลเชิงลึกทางเทคนิค (เมื่อปิดโหมดง่าย หรือต้องการดูโค้ด/หลักฐาน) */}
+        {(!isSimpleMode || finding.evidence) && (
+          <div className="pt-2 border-t border-slate-900 text-xs space-y-2">
+            {finding.evidence && (
+              <div className="bg-slate-900/90 border border-slate-800 p-3 rounded-xl font-mono text-[11px] text-slate-300">
+                <span className="text-slate-500 block text-[10px] uppercase tracking-wider mb-1">
+                  🔍 จุดและหลักฐานที่ระบบตรวจพบ:
+                </span>
+                <code className="text-amber-400 break-all">{finding.evidence}</code>
+              </div>
+            )}
+            {!isSimpleMode && (
+              <div className="text-[11px] text-slate-500 font-mono">
+                <span className="font-bold text-slate-400">Technical Details: </span>
+                {finding.description}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 font-sans">
       {/* Top Threat Radar HUD Banner */}
-      <div className="relative overflow-hidden bg-slate-950/90 border border-emerald-500/30 rounded-2xl p-6 shadow-2xl shadow-emerald-500/5 backdrop-blur-md">
+      <div className="relative overflow-hidden bg-slate-950/90 border border-emerald-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-emerald-500/5 backdrop-blur-md">
         <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
           <div>
             <div className="flex items-center space-x-2">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping inline-block" />
-              <span className="text-[11px] font-mono tracking-widest text-emerald-400 uppercase font-bold bg-emerald-950/70 border border-emerald-500/40 px-3 py-0.5 rounded-full">
-                LIVE THREAT INTELLIGENCE &amp; BUG SCANNER ACTIVE
+              <span className="text-[11px] font-mono tracking-widest text-emerald-400 uppercase font-bold bg-emerald-950/80 border border-emerald-500/40 px-3 py-1 rounded-full">
+                COMMAND CENTER // THREAT DETECTION ENGINE 3.0
               </span>
             </div>
-            <h1 className="text-2xl md:text-3xl font-black mt-2 text-white tracking-wide uppercase">
-              RADAR DETECTION CENTER
+            <h1 className="text-2xl sm:text-3xl font-black mt-3 text-white tracking-wide uppercase">
+              ศูนย์ตรวจจับช่องโหว่ &amp; บั๊กความปลอดภัย
             </h1>
-            <p className="text-slate-400 text-xs mt-1 max-w-3xl font-mono leading-relaxed">
-              ระบบตรวจสอบภัยคุกคามทางไซเบอร์และบั๊กของระบบแบบใช้งานได้จริง (Live Threat Scanner) ตรวจจับความปลอดภัยของเว็บ (Missing Headers, Sensitive Files Leak, CORS) และวิเคราะห์โค้ด (Secrets, Injection, Crash Bugs) พร้อมแปลงผลสแกนเป็น Incident ด้วยสถาปัตยกรรม OOP อัตโนมัติ
+            <p className="text-slate-300 text-xs sm:text-sm mt-2 max-w-3xl leading-relaxed">
+              เครื่องมือสแกนหาช่องโหว่ของเว็บไซต์ และวิเคราะห์โค้ดเพื่อค้นหาคีย์ลับที่หลุดหรือบั๊กอันตรายจริง พร้อมคำอธิบายภาษาไทยแบบเข้าใจง่าย ไม่ต้องมีความรู้เชิงลึกก็อ่านเข้าใจและกดสั่งเปิด Ticket แก้ไขได้ทันที
             </p>
           </div>
 
-          <div className="flex items-center space-x-2 bg-slate-900/90 p-1.5 rounded-xl border border-emerald-500/30 self-start md:self-center font-mono text-xs">
+          {/* Controls: Mode Switcher & Tabs */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            {/* Simple / Tech View Toggle */}
             <button
-              onClick={() => setActiveTab('web')}
-              className={`px-4 py-2 rounded-lg font-bold transition-all flex items-center space-x-2 ${
-                activeTab === 'web'
-                  ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20'
-                  : 'text-slate-400 hover:text-emerald-300'
+              onClick={() => setIsSimpleMode(!isSimpleMode)}
+              className={`px-3 py-2 rounded-xl text-xs font-mono font-bold border transition-all flex items-center justify-center space-x-1.5 ${
+                isSimpleMode
+                  ? 'bg-sky-950/60 border-sky-500/50 text-sky-300'
+                  : 'bg-slate-900 border-slate-700 text-slate-400 hover:text-white'
               }`}
+              title="สลับโหมดคำอธิบาย"
             >
-              <span>🌐</span>
-              <span>WEB VULNERABILITY</span>
+              <span>{isSimpleMode ? '💡 โหมดเข้าใจง่าย (เปิดอยู่)' : '⚙️ โหมดช่างเทคนิค'}</span>
             </button>
-            <button
-              onClick={() => setActiveTab('code')}
-              className={`px-4 py-2 rounded-lg font-bold transition-all flex items-center space-x-2 ${
-                activeTab === 'code'
-                  ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20'
-                  : 'text-slate-400 hover:text-emerald-300'
-              }`}
-            >
-              <span>🔍</span>
-              <span>CODE &amp; SECRETS SAST</span>
-            </button>
+
+            {/* Tab Switcher */}
+            <div className="flex items-center bg-slate-900/90 p-1.5 rounded-2xl border border-emerald-500/30 font-mono text-xs">
+              <button
+                onClick={() => setActiveTab('web')}
+                className={`px-4 py-2.5 rounded-xl font-bold transition-all flex items-center space-x-2 ${
+                  activeTab === 'web'
+                    ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20'
+                    : 'text-slate-400 hover:text-emerald-300'
+                }`}
+              >
+                <span>🌐</span>
+                <span>สแกนเว็บไซต์/URL</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('code')}
+                className={`px-4 py-2.5 rounded-xl font-bold transition-all flex items-center space-x-2 ${
+                  activeTab === 'code'
+                    ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20'
+                    : 'text-slate-400 hover:text-emerald-300'
+                }`}
+              >
+                <span>🔍</span>
+                <span>สแกนโค้ด &amp; รหัสผ่านหลุด</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -194,15 +331,15 @@ eval("var payload = " + req.body.data); // Arbitrary Code Execution
           {/* Target URL Control Panel */}
           <div className="bg-slate-950/80 border border-emerald-500/25 rounded-2xl p-6 font-mono">
             <label className="block text-xs uppercase tracking-widest text-emerald-400 font-bold mb-2">
-              🎯 TARGET URL / API ENDPOINT TO SCAN
+              🎯 ระบุ URL เว็บไซต์หรือ API ที่ต้องการให้เรดาร์ตรวจจับ
             </label>
             <div className="flex flex-col sm:flex-row gap-3">
               <input
                 type="text"
                 value={targetUrl}
                 onChange={e => setTargetUrl(e.target.value)}
-                placeholder="https://example.com or http://localhost:3000"
-                className="flex-1 px-4 py-3 bg-slate-900 border border-emerald-500/40 rounded-xl text-emerald-300 placeholder-emerald-900 text-sm focus:outline-none focus:border-emerald-400 font-mono shadow-inner"
+                placeholder="เช่น http://localhost:3000 หรือ https://yourwebsite.com"
+                className="flex-1 px-4 py-3 bg-slate-900 border border-emerald-500/40 rounded-xl text-emerald-300 placeholder-emerald-900 text-sm focus:outline-none focus:border-emerald-400 shadow-inner"
               />
               <button
                 onClick={() => handleWebScan()}
@@ -212,12 +349,12 @@ eval("var payload = " + req.body.data); // Arbitrary Code Execution
                 {webScanning ? (
                   <>
                     <span className="animate-spin">⚡</span>
-                    <span>RADAR SCANNING...</span>
+                    <span>กำลังส่งเรดาร์ตรวจสอบ...</span>
                   </>
                 ) : (
                   <>
                     <span>📡</span>
-                    <span>INITIATE THREAT RADAR</span>
+                    <span>เริ่มสแกนหาช่องโหว่จริง</span>
                   </>
                 )}
               </button>
@@ -225,33 +362,33 @@ eval("var payload = " + req.body.data); // Arbitrary Code Execution
 
             {/* Quick-Pick Target Presets */}
             <div className="flex flex-wrap items-center gap-2 mt-4 text-[11px] text-slate-400">
-              <span className="text-slate-500">QUICK TARGET PRESETS:</span>
+              <span className="text-slate-500">เลือกเว็บตัวอย่างด่วน:</span>
               <button
                 onClick={() => {
                   setTargetUrl('http://localhost:3000');
                   handleWebScan('http://localhost:3000');
                 }}
-                className="px-2.5 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-700 text-emerald-400 hover:border-emerald-500/40 transition-colors"
+                className="px-3 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-emerald-400 hover:border-emerald-500/40 transition-colors"
               >
-                [ Localhost App :3000 ]
+                [ เว็บเครื่องนี้ (Localhost :3000) ]
               </button>
               <button
                 onClick={() => {
                   setTargetUrl('https://issue-bug-tracking-system-nine.vercel.app');
                   handleWebScan('https://issue-bug-tracking-system-nine.vercel.app');
                 }}
-                className="px-2.5 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-700 text-cyan-400 hover:border-cyan-500/40 transition-colors"
+                className="px-3 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-cyan-400 hover:border-cyan-500/40 transition-colors"
               >
-                [ Cloud Vercel App ]
+                [ เว็บจริงบน Vercel ]
               </button>
               <button
                 onClick={() => {
                   setTargetUrl('https://example.com');
                   handleWebScan('https://example.com');
                 }}
-                className="px-2.5 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:border-slate-500 transition-colors"
+                className="px-3 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:border-slate-500 transition-colors"
               >
-                [ Example.com ]
+                [ example.com ]
               </button>
             </div>
           </div>
@@ -265,108 +402,56 @@ eval("var payload = " + req.body.data); // Arbitrary Code Execution
                   <div className={`text-4xl font-black border-2 w-16 h-16 rounded-full flex items-center justify-center shadow-lg ${getGradeBadge(webResult.securityGrade)}`}>
                     {webResult.securityGrade}
                   </div>
-                  <div className="text-[10px] text-slate-400 mt-2 uppercase tracking-wider">SECURITY GRADE</div>
-                  <div className="text-xs text-slate-500 font-bold">{webResult.score}/100 PTS</div>
+                  <div className="text-[10px] text-slate-400 mt-2 uppercase tracking-wider">เกรดความปลอดภัย</div>
+                  <div className="text-xs text-slate-500 font-bold">{webResult.score}/100 คะแนน</div>
                 </div>
 
                 {/* Response Latency */}
                 <div className="bg-slate-950/80 border border-emerald-500/20 rounded-2xl p-5 flex flex-col justify-center">
                   <div className="text-2xl font-black text-emerald-400">{webResult.responseTimeMs} ms</div>
-                  <div className="text-[10px] text-slate-400 mt-1 uppercase tracking-wider">LATENCY TIME</div>
+                  <div className="text-[10px] text-slate-400 mt-1 uppercase tracking-wider">ความเร็วตอบสนอง</div>
                   <div className="text-xs text-emerald-500/80 mt-1">HTTP {webResult.statusCode} OK</div>
                 </div>
 
                 {/* Critical Threats */}
                 <div className="bg-slate-950/80 border border-rose-500/30 rounded-2xl p-5 flex flex-col justify-center">
                   <div className="text-2xl font-black text-rose-400">{webResult.criticalCount}</div>
-                  <div className="text-[10px] text-slate-400 mt-1 uppercase tracking-wider">CRITICAL CVE</div>
-                  <div className="text-xs text-rose-500/80 mt-1">Immediate Threat</div>
+                  <div className="text-[10px] text-slate-400 mt-1 uppercase tracking-wider">จุดวิกฤตอันตราย</div>
+                  <div className="text-xs text-rose-500/80 mt-1">เสี่ยงถูกเจาะทันที</div>
                 </div>
 
                 {/* High Threats */}
                 <div className="bg-slate-950/80 border border-amber-500/30 rounded-2xl p-5 flex flex-col justify-center">
                   <div className="text-2xl font-black text-amber-400">{webResult.highCount}</div>
-                  <div className="text-[10px] text-slate-400 mt-1 uppercase tracking-wider">HIGH RISK</div>
-                  <div className="text-xs text-amber-500/80 mt-1">Action Required</div>
+                  <div className="text-[10px] text-slate-400 mt-1 uppercase tracking-wider">ความเสี่ยงสูง</div>
+                  <div className="text-xs text-amber-500/80 mt-1">ต้องรีบแก้ไข</div>
                 </div>
 
                 {/* Moderate/Low */}
                 <div className="bg-slate-950/80 border border-slate-700 rounded-2xl p-5 flex flex-col justify-center">
                   <div className="text-2xl font-black text-slate-300">{webResult.mediumCount + webResult.lowCount}</div>
-                  <div className="text-[10px] text-slate-400 mt-1 uppercase tracking-wider">MEDIUM / LOW</div>
-                  <div className="text-xs text-slate-500 mt-1">Hardening Advice</div>
+                  <div className="text-[10px] text-slate-400 mt-1 uppercase tracking-wider">เสี่ยงปานกลาง/คำแนะนำ</div>
+                  <div className="text-xs text-slate-500 mt-1">ควรปรับปรุงระบบ</div>
                 </div>
               </div>
 
               {/* Detected Threat Findings */}
-              <div className="space-y-3 font-mono">
+              <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xs uppercase tracking-widest text-emerald-400 font-bold flex items-center gap-2">
-                    <span>🚨</span> REAL DETECTED THREATS &amp; SECURITY GAPS ({webResult.findings.length})
+                  <h3 className="text-sm uppercase tracking-widest text-emerald-400 font-bold flex items-center gap-2">
+                    <span>🚨</span> รายการช่องโหว่และความเสี่ยงที่ตรวจพบจริง ({webResult.findings.length} จุด)
                   </h3>
-                  <span className="text-slate-500 text-xs">
-                    TARGET: {webResult.targetUrl}
+                  <span className="text-slate-500 text-xs font-mono">
+                    เป้าหมาย: {webResult.targetUrl}
                   </span>
                 </div>
 
                 {webResult.findings.length === 0 ? (
-                  <div className="bg-emerald-950/20 border border-emerald-500/30 rounded-2xl p-8 text-center text-emerald-400 text-xs">
-                    ✓ EXCELLENT: No security vulnerabilities or missing headers detected on this target!
+                  <div className="bg-emerald-950/20 border border-emerald-500/30 rounded-2xl p-8 text-center text-emerald-400 text-sm">
+                    ✓ ยอดเยี่ยมมาก! ไม่พบช่องโหว่หรือความเสี่ยงใดๆ บนเว็บไซต์เป้าหมายนี้
                   </div>
                 ) : (
-                  webResult.findings.map(finding => {
-                    const isLogged = loggedFindingIds[finding.id];
-                    return (
-                      <div
-                        key={finding.id}
-                        className="bg-slate-950/80 border border-slate-800 hover:border-emerald-500/40 rounded-xl p-5 transition-all space-y-3"
-                      >
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                          <div className="flex items-center space-x-2.5">
-                            <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded border uppercase tracking-wider ${getSeverityBadge(finding.severity)}`}>
-                              {finding.severity} (CVSS: {finding.cvssScore.toFixed(1)})
-                            </span>
-                            <span className="text-slate-500 text-xs">[{finding.cveOrType}]</span>
-                          </div>
-
-                          {/* Auto-Log Button */}
-                          <button
-                            onClick={() => handleAutoLog(finding)}
-                            disabled={isLogged}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center space-x-1.5 self-start sm:self-auto ${
-                              isLogged
-                                ? 'bg-slate-800 text-emerald-400 border border-emerald-500/30 cursor-default'
-                                : 'bg-rose-950/60 hover:bg-rose-900/60 text-rose-300 border border-rose-500/40 shadow-sm shadow-rose-500/20 cursor-pointer'
-                            }`}
-                          >
-                            <span>{isLogged ? '✓' : '⚡'}</span>
-                            <span>{isLogged ? 'INCIDENT LOGGED IN REPO' : 'AUTO-LOG THREAT AS INCIDENT'}</span>
-                          </button>
-                        </div>
-
-                        <div>
-                          <h4 className="text-white font-bold text-sm tracking-wide">
-                            {finding.title}
-                          </h4>
-                          <p className="text-slate-400 text-xs mt-1 leading-relaxed">
-                            {finding.description}
-                          </p>
-                        </div>
-
-                        {finding.evidence && (
-                          <div className="bg-slate-900/90 border border-slate-800 p-2.5 rounded-lg text-[11px] text-slate-300">
-                            <span className="text-slate-500 block text-[10px] uppercase tracking-wider mb-0.5">TARGET TELEMETRY / EVIDENCE:</span>
-                            <code className="text-emerald-400">{finding.evidence}</code>
-                          </div>
-                        )}
-
-                        <div className="bg-emerald-950/30 border border-emerald-500/20 p-2.5 rounded-lg text-[11px] text-emerald-300">
-                          <span className="text-emerald-500 block text-[10px] uppercase tracking-wider mb-0.5">🛡️ RECOMMENDED MITIGATION / PATCH:</span>
-                          {finding.remediation}
-                        </div>
-                      </div>
-                    );
-                  })
+                  webResult.findings.map(finding => renderFindingCard(finding))
                 )}
               </div>
             </div>
@@ -378,43 +463,60 @@ eval("var payload = " + req.body.data); // Arbitrary Code Execution
       {activeTab === 'code' && (
         <div className="space-y-6">
           <div className="bg-slate-950/80 border border-emerald-500/25 rounded-2xl p-6 font-mono space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <label className="text-xs uppercase tracking-widest text-emerald-400 font-bold flex items-center gap-2">
-                <span>📝</span> SOURCE CODE / STACK TRACE TO INSPECT
+                <span>📝</span> วางซอร์สโค้ด หรือข้อความ Log Error เพื่อให้ระบบสแกนหาจุดบกพร่อง
               </label>
-              <div className="flex items-center space-x-2 text-[11px]">
-                <span className="text-slate-500">SAMPLE PAYLOADS:</span>
+
+              {/* Sample Payloads */}
+              <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                <span className="text-slate-500">เลือกตัวอย่างทดสอบ:</span>
                 <button
                   onClick={() =>
-                    setSourceCode(`// Sample: Critical Secrets & Injection
-const AWS_SECRET = "AKIAIOSFODNN7EXAMPLE";
-const DB_PASS = "super_secret_db_password_123!";
-function queryUser(userId) {
-  const sql = "SELECT * FROM accounts WHERE id = " + userId;
-  return db.query(sql);
-}
-eval("runCustomHandler('" + req.query.fn + "')");
+                    setSourceCode(`// ตัวอย่าง 1: คีย์ลับ AWS, OpenAI และ Database หลุด
+const AWS_KEY = "AKIAIOSFODNN7EXAMPLE";
+const OPENAI_SECRET = "sk-proj-999988887777666655554444333322221111";
+const STRIPE_KEY = "sk_test_mock_fake_payment_key_123456789";
+const DATABASE_URL = "postgres://admin:SuperSecretPass123@db.example.com:5432/production";
 `)
                   }
-                  className="px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-amber-400 hover:border-amber-500/50"
+                  className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 text-amber-400 hover:border-amber-500/50 transition-colors"
                 >
-                  [ Keys &amp; SQLi ]
+                  [ คีย์ลับหลุด ]
                 </button>
                 <button
                   onClick={() =>
-                    setSourceCode(`// Sample: XSS & Command Injection
-import React from 'react';
-import { exec } from 'child_process';
-
-export function UserProfile({ rawInput, cmd }) {
-  exec(\`ping -c 4 \${cmd}\`);
-  return <div dangerouslySetInnerHTML={{ __html: rawInput }} />;
+                    setSourceCode(`// ตัวอย่าง 2: SQL Injection และ eval อันตราย
+function searchAccount(userId, customExpression) {
+  // บั๊ก: SQL Injection
+  const query = "SELECT * FROM accounts WHERE id = " + userId;
+  
+  // บั๊ก: รันโค้ดอันตรายผ่าน eval
+  eval("calculateBonus(" + customExpression + ")");
 }
 `)
                   }
-                  className="px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-purple-400 hover:border-purple-500/50"
+                  className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 text-rose-400 hover:border-rose-500/50 transition-colors"
                 >
-                  [ XSS &amp; Cmd Injection ]
+                  [ SQLi &amp; eval() ]
+                </button>
+                <button
+                  onClick={() =>
+                    setSourceCode(`// ตัวอย่าง 3: XSS ใน React และปิดระบบตรวจ SSL
+import React from 'react';
+
+export function CommentView({ userComment }) {
+  // อันตราย: DOM XSS
+  return <div dangerouslySetInnerHTML={{ __html: userComment }} />;
+}
+
+// อันตราย: ปิดการตรวจสอบใบรับรองความปลอดภัย
+const axiosConfig = { rejectUnauthorized: false };
+`)
+                  }
+                  className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 text-purple-400 hover:border-purple-500/50 transition-colors"
+                >
+                  [ XSS &amp; SSL Bypass ]
                 </button>
                 <button
                   onClick={() =>
@@ -423,9 +525,9 @@ export function UserProfile({ rawInput, cmd }) {
     at handleRequest (C:/app/src/controllers/api.ts:89:12)
     at processTicksAndRejections (node:internal/process/task_queues:95:5)`)
                   }
-                  className="px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-rose-400 hover:border-rose-500/50"
+                  className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 text-cyan-400 hover:border-cyan-500/50 transition-colors"
                 >
-                  [ Stack Trace Bug ]
+                  [ Log บั๊กขัดข้อง ]
                 </button>
               </div>
             </div>
@@ -434,7 +536,7 @@ export function UserProfile({ rawInput, cmd }) {
               value={sourceCode}
               onChange={e => setSourceCode(e.target.value)}
               rows={9}
-              placeholder="Paste JavaScript / TypeScript / SQL / Log trace here to scan..."
+              placeholder="วางโค้ด JavaScript / TypeScript / SQL หรือข้อความ Log Error ที่นี่..."
               className="w-full px-4 py-3 bg-slate-900 border border-emerald-500/30 rounded-xl text-emerald-300 font-mono text-xs focus:outline-none focus:border-emerald-400 shadow-inner"
             />
 
@@ -447,12 +549,12 @@ export function UserProfile({ rawInput, cmd }) {
                 {codeScanning ? (
                   <>
                     <span className="animate-spin">⚡</span>
-                    <span>ANALYZING CODE AST...</span>
+                    <span>กำลังวิเคราะห์โครงสร้างโค้ด...</span>
                   </>
                 ) : (
                   <>
                     <span>🔍</span>
-                    <span>INSPECT CODE FOR DEFECTS &amp; SECRETS</span>
+                    <span>ตรวจหาบั๊ก &amp; ข้อมูลลับหลุดในโค้ด</span>
                   </>
                 )}
               </button>
@@ -461,74 +563,22 @@ export function UserProfile({ rawInput, cmd }) {
 
           {/* Code Scan Results */}
           {codeResult && (
-            <div className="space-y-4 font-mono">
+            <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-xs uppercase tracking-widest text-emerald-400 font-bold flex items-center gap-2">
-                  <span>🚨</span> CODE DEFECTS &amp; SECRET EXPOSURES DETECTED ({codeResult.totalFindings})
+                <h3 className="text-sm uppercase tracking-widest text-emerald-400 font-bold flex items-center gap-2">
+                  <span>🚨</span> รายการช่องโหว่และข้อผิดพลาดในโค้ดที่ตรวจพบ ({codeResult.totalFindings} รายการ)
                 </h3>
-                <span className="text-slate-500 text-xs">
-                  SCANNED {codeResult.linesScanned} LINES
+                <span className="text-slate-500 text-xs font-mono">
+                  สแกนทั้งหมด {codeResult.linesScanned} บรรทัด
                 </span>
               </div>
 
               {codeResult.findings.length === 0 ? (
-                <div className="bg-emerald-950/20 border border-emerald-500/30 rounded-2xl p-8 text-center text-emerald-400 text-xs">
-                  ✓ NO KNOWN VULNERABILITIES OR HARDCODED SECRETS FOUND IN PAYLOAD.
+                <div className="bg-emerald-950/20 border border-emerald-500/30 rounded-2xl p-8 text-center text-emerald-400 text-sm">
+                  ✓ โค้ดชุดนี้ปลอดภัย! ไม่พบคีย์ลับหลุดหรือรูปแบบคำสั่งที่เป็นอันตราย
                 </div>
               ) : (
-                codeResult.findings.map(finding => {
-                  const isLogged = loggedFindingIds[finding.id];
-                  return (
-                    <div
-                      key={finding.id}
-                      className="bg-slate-950/80 border border-slate-800 hover:border-emerald-500/40 rounded-xl p-5 transition-all space-y-3"
-                    >
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                        <div className="flex items-center space-x-2.5">
-                          <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded border uppercase tracking-wider ${getSeverityBadge(finding.severity)}`}>
-                            {finding.severity} (CVSS: {finding.cvssScore.toFixed(1)})
-                          </span>
-                          <span className="text-slate-500 text-xs">[{finding.cveOrType}]</span>
-                        </div>
-
-                        {/* Auto-Log Button */}
-                        <button
-                          onClick={() => handleAutoLog(finding)}
-                          disabled={isLogged}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center space-x-1.5 self-start sm:self-auto ${
-                            isLogged
-                              ? 'bg-slate-800 text-emerald-400 border border-emerald-500/30 cursor-default'
-                              : 'bg-rose-950/60 hover:bg-rose-900/60 text-rose-300 border border-rose-500/40 shadow-sm shadow-rose-500/20 cursor-pointer'
-                          }`}
-                        >
-                          <span>{isLogged ? '✓' : '⚡'}</span>
-                          <span>{isLogged ? 'INCIDENT LOGGED IN REPO' : 'AUTO-LOG BUG/THREAT INCIDENT'}</span>
-                        </button>
-                      </div>
-
-                      <div>
-                        <h4 className="text-white font-bold text-sm tracking-wide">
-                          {finding.title}
-                        </h4>
-                        <p className="text-slate-400 text-xs mt-1 leading-relaxed">
-                          {finding.description}
-                        </p>
-                      </div>
-
-                      {finding.evidence && (
-                        <div className="bg-slate-900/90 border border-slate-800 p-2.5 rounded-lg text-[11px] text-slate-300">
-                          <span className="text-slate-500 block text-[10px] uppercase tracking-wider mb-0.5">EXCERPT IN CODE:</span>
-                          <code className="text-amber-400 font-mono">{finding.evidence}</code>
-                        </div>
-                      )}
-
-                      <div className="bg-emerald-950/30 border border-emerald-500/20 p-2.5 rounded-lg text-[11px] text-emerald-300">
-                        <span className="text-emerald-500 block text-[10px] uppercase tracking-wider mb-0.5">🛡️ RECOMMENDED MITIGATION / PATCH:</span>
-                        {finding.remediation}
-                      </div>
-                    </div>
-                  );
-                })
+                codeResult.findings.map(finding => renderFindingCard(finding))
               )}
             </div>
           )}

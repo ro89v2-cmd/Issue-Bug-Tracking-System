@@ -4,9 +4,12 @@ import { Priority } from '@/models/enums';
 
 export interface ScanFinding {
   id: string;
-  category: 'header' | 'information_disclosure' | 'sensitive_file' | 'secret_leak' | 'code_vuln' | 'ssl_tls' | 'cors';
+  category: 'header' | 'information_disclosure' | 'sensitive_file' | 'secret_leak' | 'code_vuln' | 'ssl_tls' | 'cors' | 'cookie';
   title: string;
   description: string;
+  simpleExplanation: string; // คำอธิบายภาษาไทยแบบเข้าใจง่าย
+  riskImpact: string;         // อันตรายอย่างไร / สิ่งที่อาจเกิดขึ้นหากไม่แก้
+  howToFixEasy: string;       // วิธีแก้ไขอย่างง่าย เป็นขั้นตอน
   severity: Priority;
   cvssScore: number;
   target: string;
